@@ -17,7 +17,6 @@ id
 name
 description
 icon
-shortDescription
 public
 secret
 creatorId
@@ -32,18 +31,17 @@ configuration {
 
 // gqlOrganizationApp mirrors the readable subset of the OrganizationApp type.
 type gqlOrganizationApp struct {
-	ID               string                   `json:"id"`
-	Name             string                   `json:"name"`
-	Description      string                   `json:"description"`
-	Icon             *string                  `json:"icon"`
-	ShortDescription *string                  `json:"shortDescription"`
-	Public           *bool                    `json:"public"`
-	Secret           *string                  `json:"secret"`
-	CreatorID        string                   `json:"creatorId"`
-	OrganizationID   string                   `json:"organizationId"`
-	CreatedAt        string                   `json:"createdAt"`
-	UpdatedAt        string                   `json:"updatedAt"`
-	Configuration    gqlOrganizationAppConfig `json:"configuration"`
+	ID             string                   `json:"id"`
+	Name           string                   `json:"name"`
+	Description    string                   `json:"description"`
+	Icon           *string                  `json:"icon"`
+	Public         *bool                    `json:"public"`
+	Secret         *string                  `json:"secret"`
+	CreatorID      string                   `json:"creatorId"`
+	OrganizationID string                   `json:"organizationId"`
+	CreatedAt      string                   `json:"createdAt"`
+	UpdatedAt      string                   `json:"updatedAt"`
+	Configuration  gqlOrganizationAppConfig `json:"configuration"`
 }
 
 type gqlOrganizationAppConfig struct {
@@ -82,7 +80,6 @@ func buildOrganizationAppInput(ctx context.Context, m *organizationAppModel, inc
 		"requiresConsent":    m.RequiresConsent.ValueBool(),
 	}
 	putStr(input, "icon", m.Icon)
-	putStr(input, "shortDescription", m.ShortDescription)
 
 	if includePublic && !m.Public.IsNull() && !m.Public.IsUnknown() {
 		input["public"] = m.Public.ValueBool()
@@ -124,7 +121,6 @@ func applyOrganizationAppRead(g *gqlOrganizationApp, m *organizationAppModel) {
 	m.Name = types.StringValue(g.Name)
 	m.Description = types.StringValue(g.Description)
 	m.Icon = strVal(g.Icon)
-	m.ShortDescription = strVal(g.ShortDescription)
 	m.Public = boolVal(g.Public)
 	m.RedirectURLs = stringListVal(g.Configuration.RedirectURLs)
 	m.LogoutRedirectURLs = stringListVal(g.Configuration.LogoutRedirectURLs)

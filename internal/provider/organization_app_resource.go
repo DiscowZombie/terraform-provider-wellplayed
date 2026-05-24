@@ -41,7 +41,6 @@ type organizationAppModel struct {
 	Name               types.String `tfsdk:"name"`
 	Description        types.String `tfsdk:"description"`
 	Icon               types.String `tfsdk:"icon"`
-	ShortDescription   types.String `tfsdk:"short_description"`
 	Public             types.Bool   `tfsdk:"public"`
 	RedirectURLs       types.List   `tfsdk:"redirect_urls"`
 	LogoutRedirectURLs types.List   `tfsdk:"logout_redirect_urls"`
@@ -82,10 +81,6 @@ func (r *organizationAppResource) Schema(ctx context.Context, req resource.Schem
 			},
 			"icon": schema.StringAttribute{
 				MarkdownDescription: "App icon URL.",
-				Optional:            true,
-			},
-			"short_description": schema.StringAttribute{
-				MarkdownDescription: "Short description of the app.",
 				Optional:            true,
 			},
 			"public": schema.BoolAttribute{
