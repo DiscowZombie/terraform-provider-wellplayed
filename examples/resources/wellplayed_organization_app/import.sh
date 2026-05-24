@@ -1,0 +1,5 @@
+# Copyright (c) HashiCorp, Inc.
+
+# Organization apps are imported by their ID (the OAuth2 client ID). The client
+# secret is returned only on creation, so it is not available after import.
+terraform import wellplayed_organization_app.web app_01h...
