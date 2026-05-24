@@ -189,6 +189,7 @@ func (r *tournamentResource) Schema(ctx context.Context, req resource.SchemaRequ
 			"created_at": schema.StringAttribute{
 				MarkdownDescription: "When the tournament was created (RFC 3339).",
 				Computed:            true,
+				PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 			"updated_at": schema.StringAttribute{
 				MarkdownDescription: "When the tournament was last updated (RFC 3339).",

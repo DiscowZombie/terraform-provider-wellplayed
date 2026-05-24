@@ -137,6 +137,7 @@ func (r *organizationAppResource) Schema(ctx context.Context, req resource.Schem
 			"created_at": schema.StringAttribute{
 				MarkdownDescription: "When the app was created (RFC 3339).",
 				Computed:            true,
+				PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 			"updated_at": schema.StringAttribute{
 				MarkdownDescription: "When the app was last updated (RFC 3339).",
