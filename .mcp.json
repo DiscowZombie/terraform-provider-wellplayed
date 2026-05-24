@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "wellplayed": {
+      "type": "http",
+      "url": "https://mcp.well-played.gg/mcp"
+    }
+  }
+}

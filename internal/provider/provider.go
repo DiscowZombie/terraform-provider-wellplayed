@@ -1,108 +1,186 @@
-// Copyright IBM Corp. 2021, 2025
+// Copyright (c) Mathéo Cimbaro
 // SPDX-License-Identifier: MPL-2.0
 
 package provider
 
 import (
 	"context"
-	"net/http"
+	"os"
 
-	"github.com/hashicorp/terraform-plugin-framework/action"
+	"github.com/DiscowZombie/terraform-provider-wellplayed/internal/client"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
-	"github.com/hashicorp/terraform-plugin-framework/ephemeral"
-	"github.com/hashicorp/terraform-plugin-framework/function"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-// Ensure ScaffoldingProvider satisfies various provider interfaces.
-var _ provider.Provider = &ScaffoldingProvider{}
-var _ provider.ProviderWithFunctions = &ScaffoldingProvider{}
-var _ provider.ProviderWithEphemeralResources = &ScaffoldingProvider{}
-var _ provider.ProviderWithActions = &ScaffoldingProvider{}
+// Environment variables used as fallbacks for provider configuration.
+const (
+	envEndpoint       = "WELLPLAYED_ENDPOINT"
+	envOrganizationID = "WELLPLAYED_ORGANIZATION_ID"
+	envToken          = "WELLPLAYED_TOKEN"
+	envClientID       = "WELLPLAYED_CLIENT_ID"
+	envClientSecret   = "WELLPLAYED_CLIENT_SECRET"
+	envTokenURL       = "WELLPLAYED_TOKEN_URL"
+)
 
-// ScaffoldingProvider defines the provider implementation.
-type ScaffoldingProvider struct {
+// Ensure WellPlayedProvider satisfies the provider interface.
+var _ provider.Provider = &WellPlayedProvider{}
+
+// WellPlayedProvider is the WellPlayed GraphQL Terraform provider.
+type WellPlayedProvider struct {
 	// version is set to the provider version on release, "dev" when the
 	// provider is built and ran locally, and "test" when running acceptance
 	// testing.
 	version string
 }
 
-// ScaffoldingProviderModel describes the provider data model.
-type ScaffoldingProviderModel struct {
-	Endpoint types.String `tfsdk:"endpoint"`
+// WellPlayedProviderModel maps provider schema attributes to Go values.
+type WellPlayedProviderModel struct {
+	Endpoint       types.String `tfsdk:"endpoint"`
+	OrganizationID types.String `tfsdk:"organization_id"`
+	Token          types.String `tfsdk:"token"`
+	ClientID       types.String `tfsdk:"client_id"`
+	ClientSecret   types.String `tfsdk:"client_secret"`
+	TokenURL       types.String `tfsdk:"token_url"`
 }
 
-func (p *ScaffoldingProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
-	resp.TypeName = "scaffolding"
+func (p *WellPlayedProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
+	resp.TypeName = "wellplayed"
 	resp.Version = p.version
 }
 
-func (p *ScaffoldingProvider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
+func (p *WellPlayedProvider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		MarkdownDescription: "Interact with the [WellPlayed](https://well-played.gg/) GraphQL API. " +
+			"Authenticate either with the application flow (`client_id` + `client_secret`, exchanged for a " +
+			"service token) or by supplying a pre-obtained OIDC access `token`.",
 		Attributes: map[string]schema.Attribute{
 			"endpoint": schema.StringAttribute{
-				MarkdownDescription: "Example provider attribute",
-				Optional:            true,
+				MarkdownDescription: "WellPlayed GraphQL endpoint. Defaults to `" + client.DefaultEndpoint +
+					"`. May also be set with the `" + envEndpoint + "` environment variable.",
+				Optional: true,
+			},
+			"organization_id": schema.StringAttribute{
+				MarkdownDescription: "Organization short id, sent as the `organization-id` header on every request. " +
+					"May also be set with the `" + envOrganizationID + "` environment variable.",
+				Optional: true,
+			},
+			"token": schema.StringAttribute{
+				MarkdownDescription: "Pre-obtained OIDC access token (static token flow). Mutually exclusive with " +
+					"`client_id`/`client_secret`. May also be set with the `" + envToken + "` environment variable.",
+				Optional:  true,
+				Sensitive: true,
+			},
+			"client_id": schema.StringAttribute{
+				MarkdownDescription: "OAuth2 client id for the application flow. Requires `client_secret`. " +
+					"May also be set with the `" + envClientID + "` environment variable.",
+				Optional: true,
+			},
+			"client_secret": schema.StringAttribute{
+				MarkdownDescription: "OAuth2 client secret for the application flow. Requires `client_id`. " +
+					"May also be set with the `" + envClientSecret + "` environment variable.",
+				Optional:  true,
+				Sensitive: true,
+			},
+			"token_url": schema.StringAttribute{
+				MarkdownDescription: "OAuth2 token endpoint for the application flow. Defaults to `" +
+					client.DefaultTokenURL + "`. May also be set with the `" + envTokenURL + "` environment variable.",
+				Optional: true,
 			},
 		},
 	}
 }
 
-func (p *ScaffoldingProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
-	var data ScaffoldingProviderModel
-
+func (p *WellPlayedProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
+	var data WellPlayedProviderModel
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Config values take precedence; fall back to environment variables.
+	endpoint := stringOrEnv(data.Endpoint, envEndpoint)
+	organizationID := stringOrEnv(data.OrganizationID, envOrganizationID)
+	token := stringOrEnv(data.Token, envToken)
+	clientID := stringOrEnv(data.ClientID, envClientID)
+	clientSecret := stringOrEnv(data.ClientSecret, envClientSecret)
+	tokenURL := stringOrEnv(data.TokenURL, envTokenURL)
+
+	if organizationID == "" {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("organization_id"),
+			"Missing organization id",
+			"The provider requires an organization id. Set the `organization_id` attribute or the "+
+				envOrganizationID+" environment variable.",
+		)
+	}
+
+	// Exactly one auth flow must be configured.
+	hasToken := token != ""
+	hasApp := clientID != "" || clientSecret != ""
+	switch {
+	case hasToken && hasApp:
+		resp.Diagnostics.AddError(
+			"Conflicting authentication configuration",
+			"Set either `token` (static token flow) or `client_id`/`client_secret` (application flow), not both.",
+		)
+	case !hasToken && !hasApp:
+		resp.Diagnostics.AddError(
+			"Missing authentication configuration",
+			"Configure either `token`, or both `client_id` and `client_secret` "+
+				"(or the equivalent WELLPLAYED_* environment variables).",
+		)
+	case hasApp && (clientID == "" || clientSecret == ""):
+		resp.Diagnostics.AddError(
+			"Incomplete application credentials",
+			"The application flow requires both `client_id` and `client_secret`.",
+		)
+	}
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Configuration values are now available.
-	// if data.Endpoint.IsNull() { /* ... */ }
+	c, err := client.New(ctx, client.Config{
+		Endpoint:       endpoint,
+		OrganizationID: organizationID,
+		Token:          token,
+		ClientID:       clientID,
+		ClientSecret:   clientSecret,
+		TokenURL:       tokenURL,
+	})
+	if err != nil {
+		resp.Diagnostics.AddError("Unable to create WellPlayed client", err.Error())
+		return
+	}
 
-	// Example client configuration for data sources and resources
-	client := http.DefaultClient
-	resp.DataSourceData = client
-	resp.ResourceData = client
+	resp.DataSourceData = c
+	resp.ResourceData = c
 }
 
-func (p *ScaffoldingProvider) Resources(ctx context.Context) []func() resource.Resource {
-	return []func() resource.Resource{
-		NewExampleResource,
-	}
+func (p *WellPlayedProvider) Resources(ctx context.Context) []func() resource.Resource {
+	return []func() resource.Resource{}
 }
 
-func (p *ScaffoldingProvider) EphemeralResources(ctx context.Context) []func() ephemeral.EphemeralResource {
-	return []func() ephemeral.EphemeralResource{
-		NewExampleEphemeralResource,
-	}
+func (p *WellPlayedProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
+	return []func() datasource.DataSource{}
 }
 
-func (p *ScaffoldingProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
-	return []func() datasource.DataSource{
-		NewExampleDataSource,
+// stringOrEnv returns the configured value if known and non-null, otherwise
+// the named environment variable.
+func stringOrEnv(v types.String, env string) string {
+	if !v.IsNull() && !v.IsUnknown() {
+		return v.ValueString()
 	}
-}
-
-func (p *ScaffoldingProvider) Functions(ctx context.Context) []func() function.Function {
-	return []func() function.Function{
-		NewExampleFunction,
-	}
-}
-
-func (p *ScaffoldingProvider) Actions(ctx context.Context) []func() action.Action {
-	return []func() action.Action{
-		NewExampleAction,
-	}
+	return os.Getenv(env)
 }
 
 func New(version string) func() provider.Provider {
 	return func() provider.Provider {
-		return &ScaffoldingProvider{
+		return &WellPlayedProvider{
 			version: version,
 		}
 	}
