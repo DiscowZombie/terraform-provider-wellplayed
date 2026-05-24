@@ -1,5 +1,3 @@
-# Copyright (c) HashiCorp, Inc.
-
 # A minimal OAuth2 identity provider.
 resource "wellplayed_identity_provider" "oauth2" {
   name                           = "Acme SSO"

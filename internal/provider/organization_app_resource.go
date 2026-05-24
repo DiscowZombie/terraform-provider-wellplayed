@@ -1,6 +1,3 @@
-// Copyright (c) Mathéo Cimbaro
-// SPDX-License-Identifier: MPL-2.0
-
 package provider
 
 import (
@@ -217,7 +214,7 @@ func (r *organizationAppResource) Read(ctx context.Context, req resource.ReadReq
 	}
 
 	// secret is returned only on creation; leave the prior value in place.
-	resp.Diagnostics.Append(applyOrganizationAppRead(out.OrganizationApp, &state)...)
+	applyOrganizationAppRead(out.OrganizationApp, &state)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 

@@ -1,6 +1,3 @@
-// Copyright (c) Mathéo Cimbaro
-// SPDX-License-Identifier: MPL-2.0
-
 package provider
 
 import (
@@ -122,7 +119,7 @@ func applyOrganizationAppComputed(g *gqlOrganizationApp, m *organizationAppModel
 // applyOrganizationAppRead refreshes the readable fields onto the model during
 // Read. `secret` is left untouched: it is returned only on creation and is
 // preserved from prior state.
-func applyOrganizationAppRead(g *gqlOrganizationApp, m *organizationAppModel) diag.Diagnostics {
+func applyOrganizationAppRead(g *gqlOrganizationApp, m *organizationAppModel) {
 	m.ID = types.StringValue(g.ID)
 	m.Name = types.StringValue(g.Name)
 	m.Description = types.StringValue(g.Description)
@@ -138,7 +135,6 @@ func applyOrganizationAppRead(g *gqlOrganizationApp, m *organizationAppModel) di
 	m.OrganizationID = types.StringValue(g.OrganizationID)
 	m.CreatedAt = types.StringValue(g.CreatedAt)
 	m.UpdatedAt = types.StringValue(g.UpdatedAt)
-	return nil
 }
 
 // --- conversion helpers -----------------------------------------------------

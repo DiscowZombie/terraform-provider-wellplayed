@@ -1,64 +1,100 @@
-# Terraform Provider Scaffolding (Terraform Plugin Framework)
+# Terraform Provider for WellPlayed
 
-_This template repository is built on the [Terraform Plugin Framework](https://github.com/hashicorp/terraform-plugin-framework). The template repository built on the [Terraform Plugin SDK](https://github.com/hashicorp/terraform-plugin-sdk) can be found at [terraform-provider-scaffolding](https://github.com/hashicorp/terraform-provider-scaffolding). See [Which SDK Should I Use?](https://developer.hashicorp.com/terraform/plugin/framework-benefits) in the Terraform documentation for additional information._
+[![Tests](https://github.com/DiscowZombie/terraform-provider-wellplayed/actions/workflows/test.yml/badge.svg)](https://github.com/DiscowZombie/terraform-provider-wellplayed/actions/workflows/test.yml)
 
-This repository is a *template* for a [Terraform](https://www.terraform.io) provider. It is intended as a starting point for creating Terraform providers, containing:
-
-- A resource and a data source (`internal/provider/`),
-- Examples (`examples/`) and generated documentation (`docs/`),
-- Miscellaneous meta files.
-
-These files contain boilerplate code that you will need to edit to create your own Terraform provider. Tutorials for creating Terraform providers can be found on the [HashiCorp Developer](https://developer.hashicorp.com/terraform/tutorials/providers-plugin-framework) platform. _Terraform Plugin Framework specific guides are titled accordingly._
-
-Please see the [GitHub template repository documentation](https://help.github.com/en/github/creating-cloning-and-archiving-repositories/creating-a-repository-from-a-template) for how to create a new repository from this template on GitHub.
-
-Once you've written your provider, you'll want to [publish it on the Terraform Registry](https://developer.hashicorp.com/terraform/registry/providers/publishing) so that others can use it.
+A [Terraform](https://www.terraform.io) provider for managing
+[WellPlayed](https://well-played.gg/) resources through its GraphQL API.
+Built on the [Terraform Plugin Framework](https://github.com/hashicorp/terraform-plugin-framework).
 
 ## Requirements
 
 - [Terraform](https://developer.hashicorp.com/terraform/downloads) >= 1.0
-- [Go](https://golang.org/doc/install) >= 1.24
+- [Go](https://golang.org/doc/install) >= 1.25 (only to build the provider from source)
 
-## Building the Provider
+## Using the provider
 
-1. Clone the repository
-1. Enter the repository directory
-1. Build the provider using the Go `install` command:
+```terraform
+terraform {
+  required_providers {
+    wellplayed = {
+      source = "DiscowZombie/wellplayed"
+    }
+  }
+}
+
+provider "wellplayed" {
+  organization_id = "my-org" # or WELLPLAYED_ORGANIZATION_ID
+
+  # Application flow (recommended for CI / automation):
+  client_id     = var.wellplayed_client_id     # or WELLPLAYED_CLIENT_ID
+  client_secret = var.wellplayed_client_secret # or WELLPLAYED_CLIENT_SECRET
+
+  # Static token flow (alternative): supply a pre-obtained OIDC access token.
+  # token = var.wellplayed_token # or WELLPLAYED_TOKEN
+}
+```
+
+### Authentication
+
+Every request needs an `organization_id` (the org short id) plus exactly one of
+the two auth flows:
+
+- **Application flow** — set `client_id` and `client_secret`; the provider
+  exchanges them for a service token at the OAuth2 token endpoint. Best for CI
+  and automation.
+- **Static token flow** — set `token` to a pre-obtained OIDC access token.
+
+The two flows are mutually exclusive. Every attribute also resolves from a
+`WELLPLAYED_*` environment variable (`WELLPLAYED_ORGANIZATION_ID`,
+`WELLPLAYED_CLIENT_ID`, `WELLPLAYED_CLIENT_SECRET`, `WELLPLAYED_TOKEN`,
+`WELLPLAYED_ENDPOINT`, `WELLPLAYED_TOKEN_URL`) so secrets need not appear in
+HCL.
+
+## Resources
+
+| Resource | Description |
+|----------|-------------|
+| `wellplayed_iam_member` | Grants an account a set of permissions within the organization. |
+| `wellplayed_tournament` | Manages a tournament, including registration windows, team sizing, registration conditions, and custom fields. |
+| `wellplayed_identity_provider` | Configures an OIDC/identity provider for the organization. |
+| `wellplayed_organization_app` | Manages an organization application (OAuth client credentials). |
+
+See the [`examples/`](./examples) directory and the generated
+[`docs/`](./docs) for full schemas and usage. Each resource supports import —
+see the per-resource `import.sh` files under `examples/resources/`.
+
+## Building the provider
 
 ```shell
 go install
 ```
 
-## Adding Dependencies
+To run the provider against a local build, see the
+[Development Overrides](https://developer.hashicorp.com/terraform/cli/config/config-file#development-overrides-for-provider-developers)
+documentation and the `dev_overrides` block pattern.
 
-This provider uses [Go modules](https://github.com/golang/go/wiki/Modules).
-Please see the Go documentation for the most up to date information about using Go modules.
+## Developing the provider
 
-To add a new dependency `github.com/author/dependency` to your Terraform provider:
+Common tasks are wired through the `GNUmakefile`:
 
 ```shell
-go get github.com/author/dependency
-go mod tidy
+make build      # compile the provider
+make testacc    # run acceptance tests (requires a live WellPlayed org)
+make generate   # regenerate docs from schema + examples
+make lint       # run golangci-lint
 ```
 
-Then commit the changes to `go.mod` and `go.sum`.
-
-## Using the Provider
-
-Fill this in for each provider
-
-## Developing the Provider
-
-If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine (see [Requirements](#requirements) above).
-
-To compile the provider, run `go install`. This will build the provider and put the provider binary in the `$GOPATH/bin` directory.
-
-To generate or update documentation, run `make generate`.
-
-In order to run the full suite of Acceptance tests, run `make testacc`.
-
-*Note:* Acceptance tests create real resources, and often cost money to run.
+Acceptance tests create real resources and require credentials in the
+environment:
 
 ```shell
+export TF_ACC=1
+export WELLPLAYED_ORGANIZATION_ID=...
+export WELLPLAYED_CLIENT_ID=...
+export WELLPLAYED_CLIENT_SECRET=...
 make testacc
 ```
+
+## License
+
+Distributed under the Mozilla Public License 2.0. See [LICENSE](./LICENSE).

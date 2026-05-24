@@ -19,8 +19,6 @@ The configuration blocks carry the `client_secret` and are returned by the API o
 ## Example Usage
 
 ```terraform
-# Copyright (c) HashiCorp, Inc.
-
 # A minimal OAuth2 identity provider.
 resource "wellplayed_identity_provider" "oauth2" {
   name                           = "Acme SSO"
@@ -239,8 +237,6 @@ Import is supported using the following syntax:
 The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
 
 ```shell
-# Copyright (c) HashiCorp, Inc.
-
 # Identity providers are imported by their ID. The configuration block is
 # managed write-only and is not refreshed on import; re-apply to reconcile it.
 terraform import wellplayed_identity_provider.oauth2 idp_01h...

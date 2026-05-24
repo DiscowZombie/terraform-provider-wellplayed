@@ -13,8 +13,6 @@ Manages an organization (IAM) membership: assigns an account to a permission gro
 ## Example Usage
 
 ```terraform
-# Copyright (c) HashiCorp, Inc.
-
 # Add a member by account ID and assign them a permission group.
 resource "wellplayed_iam_member" "by_id" {
   user_id  = "acc_01h..."
@@ -66,8 +64,6 @@ Import is supported using the following syntax:
 The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
 
 ```shell
-# Copyright (c) HashiCorp, Inc.
-
 # IAM members are imported by their account (member) ID.
 terraform import wellplayed_iam_member.by_id acc_01h...
 ```

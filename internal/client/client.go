@@ -1,6 +1,3 @@
-// Copyright (c) Mathéo Cimbaro
-// SPDX-License-Identifier: MPL-2.0
-
 // Package client provides a thin, authenticated GraphQL client for the
 // WellPlayed API (https://well-played.gg/).
 package client

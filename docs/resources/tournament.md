@@ -16,8 +16,6 @@ Timestamps are RFC 3339 and compared by instant, so `2026-06-01T00:00:00Z` and `
 ## Example Usage
 
 ```terraform
-# Copyright (c) HashiCorp, Inc.
-
 # A minimal tournament: only a title and description are required.
 resource "wellplayed_tournament" "minimal" {
   title       = "Spring Open"
@@ -255,8 +253,6 @@ Import is supported using the following syntax:
 The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
 
 ```shell
-# Copyright (c) HashiCorp, Inc.
-
 # Tournaments are imported by their ID. Authored fields (title, description,
 # dates, configuration) are refreshed from the API on the next plan.
 terraform import wellplayed_tournament.championship trn_01h...

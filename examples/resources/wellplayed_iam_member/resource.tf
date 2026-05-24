@@ -1,5 +1,3 @@
-# Copyright (c) HashiCorp, Inc.
-
 # Add a member by account ID and assign them a permission group.
 resource "wellplayed_iam_member" "by_id" {
   user_id  = "acc_01h..."
