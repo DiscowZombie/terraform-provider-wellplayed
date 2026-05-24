@@ -16,6 +16,8 @@ Timestamps are RFC 3339 and compared by instant, so `2026-06-01T00:00:00Z` and `
 ## Example Usage
 
 ```terraform
+# Copyright (c) HashiCorp, Inc.
+
 # A minimal tournament: only a title and description are required.
 resource "wellplayed_tournament" "minimal" {
   title       = "Spring Open"
@@ -33,63 +35,66 @@ resource "wellplayed_tournament" "championship" {
   start_registrations_at = "2026-06-01T00:00:00Z"
   end_registrations_at   = "2026-06-25T23:59:59Z"
 
-  configuration {
-    type          = "TOURNAMENT"
-    team_min_size = 5
-    team_max_size = 7
+  configuration = {
+    team_min_size = 2
+    team_max_size = 5
     teams_count   = 16
 
     team_status_after_registration = "AWAITING_FOR_PRESENCE_CONFIRMATION"
 
-    registration_conditions {
-      # Require every team to carry a non-empty "region" property.
-      team_conditions {
-        property           = "region"
-        property_condition = "EXISTS"
-        error_message      = "Teams must declare a region."
-
-        string_condition {
-          condition_type = "EQ"
-          value          = "EU"
-        }
-      }
-
-      # Require each member to be at least 18.
-      member_conditions {
-        property_source  = "PLAYER"
-        error_message    = "Players must be 18 or older."
-        rule_description = "Minimum age 18"
-
-        condition {
-          property           = "age"
+    registration_conditions = {
+      team_conditions = [
+        {
+          property           = "region"
           property_condition = "EXISTS"
+          error_message      = "Teams must declare a region."
 
-          numeric_condition {
-            condition_type = "BTE" # greater-than-or-equal
-            value          = 18
+          string_condition = {
+            condition_type = "EQ"
+            value          = "EU"
           }
         }
+      ]
+
+      member_conditions = [
+        {
+          property_source  = "PLAYER"
+          error_message    = "Players must be 18 or older."
+          rule_description = "Minimum age 18"
+
+          condition = {
+            property           = "age"
+            property_condition = "EXISTS"
+
+            numeric_condition = {
+              condition_type = "BTE" # greater-than-or-equal
+              value          = 18
+            }
+          }
+        }
+      ]
+    }
+
+    custom_fields = [
+      {
+        property = "jersey_name"
+        name     = "Jersey Name"
+        type     = "STRING"
+        required = true
+        order    = 1
+        unique   = false
+      },
+
+      {
+        property   = "contact_email"
+        name       = "Contact Email"
+        type       = "EMAIL"
+        required   = true
+        order      = 2
+        unique     = true
+        visibility = "OWNER_OR_PERMISSION"
       }
-    }
-
-    custom_fields {
-      property = "jersey_name"
-      name     = "Jersey Name"
-      type     = "STRING"
-      required = true
-      order    = 1
-      unique   = false
-    }
-
-    custom_fields {
-      property   = "contact_email"
-      name       = "Contact Email"
-      type       = "EMAIL"
-      required   = true
-      order      = 2
-      unique     = true
-      visibility = "OWNER_OR_PERMISSION"
-    }
+    ]
   }
 }
 ```
@@ -250,6 +255,8 @@ Import is supported using the following syntax:
 The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
 
 ```shell
+# Copyright (c) HashiCorp, Inc.
+
 # Tournaments are imported by their ID. Authored fields (title, description,
 # dates, configuration) are refreshed from the API on the next plan.
 terraform import wellplayed_tournament.championship trn_01h...

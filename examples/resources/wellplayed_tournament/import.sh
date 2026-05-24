@@ -1,3 +1,5 @@
+# Copyright (c) HashiCorp, Inc.
+
 # Tournaments are imported by their ID. Authored fields (title, description,
 # dates, configuration) are refreshed from the API on the next plan.
 terraform import wellplayed_tournament.championship trn_01h...

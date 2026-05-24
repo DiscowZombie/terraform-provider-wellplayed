@@ -1,3 +1,5 @@
+# Copyright (c) HashiCorp, Inc.
+
 # A minimal tournament: only a title and description are required.
 resource "wellplayed_tournament" "minimal" {
   title       = "Spring Open"

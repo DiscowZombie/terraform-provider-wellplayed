@@ -1,0 +1,5 @@
+# Copyright (c) HashiCorp, Inc.
+
+# Identity providers are imported by their ID. The configuration block is
+# managed write-only and is not refreshed on import; re-apply to reconcile it.
+terraform import wellplayed_identity_provider.oauth2 idp_01h...

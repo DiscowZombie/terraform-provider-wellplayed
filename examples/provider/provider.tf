@@ -1,3 +1,5 @@
+# Copyright (c) HashiCorp, Inc.
+
 provider "wellplayed" {
   organization_id = "my-org" # or WELLPLAYED_ORGANIZATION_ID
 

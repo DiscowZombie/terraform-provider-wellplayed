@@ -165,6 +165,7 @@ func (p *WellPlayedProvider) Resources(ctx context.Context) []func() resource.Re
 	return []func() resource.Resource{
 		NewIAMMemberResource,
 		NewTournamentResource,
+		NewIdentityProviderResource,
 	}
 }
 
