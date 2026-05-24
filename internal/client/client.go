@@ -77,12 +77,21 @@ func New(ctx context.Context, cfg Config) (*Client, error) {
 		tokenURL = DefaultTokenURL
 	}
 
+	// The oauth2 helpers capture the context they're given and reuse it for
+	// every future (lazy) token fetch. This Client outlives the request-scoped
+	// context handed to New (e.g. Terraform cancels its Configure context as
+	// soon as Configure returns, long before the first token is fetched during
+	// Apply). Use a background context so token refreshes aren't aborted with
+	// "context canceled". Per-request cancellation still applies via the
+	// context passed to Execute.
+	authCtx := context.Background()
+
 	var base *http.Client
 	switch {
 	case cfg.Token != "":
 		// Static token flow: no refresh, caller owns the lifecycle.
 		src := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: cfg.Token})
-		base = oauth2.NewClient(ctx, src)
+		base = oauth2.NewClient(authCtx, src)
 	case cfg.ClientID != "" && cfg.ClientSecret != "":
 		// Application flow: client-credentials grant with auto-refresh.
 		ccCfg := clientcredentials.Config{
@@ -90,9 +99,12 @@ func New(ctx context.Context, cfg Config) (*Client, error) {
 			ClientSecret: cfg.ClientSecret,
 			TokenURL:     tokenURL,
 			Scopes:       cfg.Scopes,
-			AuthStyle:    oauth2.AuthStyleInHeader,
+			// The WellPlayed OAuth client uses token_endpoint_auth_method
+			// 'client_secret_post': credentials go in the request body, not an
+			// HTTP Basic auth header.
+			AuthStyle: oauth2.AuthStyleInParams,
 		}
-		base = ccCfg.Client(ctx)
+		base = ccCfg.Client(authCtx)
 	default:
 		return nil, fmt.Errorf("no credentials configured: set either token, or both client_id and client_secret")
 	}
