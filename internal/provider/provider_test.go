@@ -4,6 +4,7 @@
 package provider
 
 import (
+	"os"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
@@ -17,7 +18,27 @@ var testAccProtoV6ProviderFactories = map[string]func() (tfprotov6.ProviderServe
 	"wellplayed": providerserver.NewProtocol6WithError(New("test")()),
 }
 
+// Acceptance tests configure the provider entirely from the environment, and
+// need a real organization plus a user and two groups to move a member
+// between. These are deployment-specific, so they come from env vars.
+const (
+	envTestUserID = "WELLPLAYED_TEST_USER_ID"
+	envTestGroup  = "WELLPLAYED_TEST_GROUP_ID"
+	envTestGroup2 = "WELLPLAYED_TEST_GROUP_ID_2"
+)
+
 func testAccPreCheck(t *testing.T) {
-	// Add assertions here (e.g. required WELLPLAYED_* environment variables)
-	// before acceptance test cases execute.
+	t.Helper()
+
+	for _, k := range []string{envOrganizationID, envTestUserID, envTestGroup, envTestGroup2} {
+		if os.Getenv(k) == "" {
+			t.Fatalf("%s must be set for acceptance tests", k)
+		}
+	}
+
+	hasToken := os.Getenv(envToken) != ""
+	hasApp := os.Getenv(envClientID) != "" && os.Getenv(envClientSecret) != ""
+	if !hasToken && !hasApp {
+		t.Fatalf("set %s, or both %s and %s, for acceptance tests", envToken, envClientID, envClientSecret)
+	}
 }
