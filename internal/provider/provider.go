@@ -164,6 +164,7 @@ func (p *WellPlayedProvider) Configure(ctx context.Context, req provider.Configu
 func (p *WellPlayedProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		NewIAMMemberResource,
+		NewTournamentResource,
 	}
 }
 

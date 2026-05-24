@@ -27,13 +27,14 @@ const (
 	envTestGroup2 = "WELLPLAYED_TEST_GROUP_ID_2"
 )
 
-func testAccPreCheck(t *testing.T) {
+// testAccPreCheckProvider asserts only the provider-level requirements: an
+// organization id plus one configured auth flow. Use it for resources that
+// don't need the IAM-specific user/group fixtures.
+func testAccPreCheckProvider(t *testing.T) {
 	t.Helper()
 
-	for _, k := range []string{envOrganizationID, envTestUserID, envTestGroup, envTestGroup2} {
-		if os.Getenv(k) == "" {
-			t.Fatalf("%s must be set for acceptance tests", k)
-		}
+	if os.Getenv(envOrganizationID) == "" {
+		t.Fatalf("%s must be set for acceptance tests", envOrganizationID)
 	}
 
 	hasToken := os.Getenv(envToken) != ""
@@ -41,4 +42,15 @@ func testAccPreCheck(t *testing.T) {
 	if !hasToken && !hasApp {
 		t.Fatalf("set %s, or both %s and %s, for acceptance tests", envToken, envClientID, envClientSecret)
 	}
+}
+
+func testAccPreCheck(t *testing.T) {
+	t.Helper()
+
+	for _, k := range []string{envTestUserID, envTestGroup, envTestGroup2} {
+		if os.Getenv(k) == "" {
+			t.Fatalf("%s must be set for acceptance tests", k)
+		}
+	}
+	testAccPreCheckProvider(t)
 }
