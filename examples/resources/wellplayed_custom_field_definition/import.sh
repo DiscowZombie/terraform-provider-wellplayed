@@ -1,0 +1,3 @@
+# Custom field definitions are imported by "<object_type>:<id>" — the object
+# type is required because the API has no single-record lookup.
+terraform import wellplayed_custom_field_definition.tournament_sponsor Tournament:cfd_01h...
