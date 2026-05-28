@@ -164,6 +164,7 @@ func (p *WellPlayedProvider) Resources(ctx context.Context) []func() resource.Re
 		NewTournamentResource,
 		NewIdentityProviderResource,
 		NewOrganizationAppResource,
+		NewPresetScriptResource,
 	}
 }
 
