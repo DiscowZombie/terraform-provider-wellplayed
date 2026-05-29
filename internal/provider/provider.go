@@ -168,6 +168,7 @@ func (p *WellPlayedProvider) Resources(ctx context.Context) []func() resource.Re
 		NewPresetScriptResource,
 		NewCustomFieldDefinitionResource,
 		NewTournamentStepPresetResource,
+		NewCustomFieldValueResource,
 	}
 }
 
