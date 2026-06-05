@@ -54,10 +54,17 @@ HCL.
 
 | Resource | Description |
 |----------|-------------|
-| `wellplayed_iam_member` | Grants an account a set of permissions within the organization. |
+| `wellplayed_iam_member` | Assigns an account to an organization permission group, granting it that group's permissions. |
+| `wellplayed_iam_group` | Manages an organization permission group: a named set of permissions that members and apps can be assigned to. |
 | `wellplayed_tournament` | Manages a tournament, including registration windows, team sizing, registration conditions, and custom fields. |
-| `wellplayed_identity_provider` | Configures an OIDC/identity provider for the organization. |
-| `wellplayed_organization_app` | Manages an organization application (OAuth client credentials). |
+| `wellplayed_tournament_step` | Manages a step (phase) within a tournament, such as a group, round-robin, or elimination bracket. |
+| `wellplayed_tournament_step_preset` | Applies a preset script to a tournament step to produce its rule set, optionally validating the result. |
+| `wellplayed_preset_script` | Manages a named Lua preset script (with declared parameters) that builds a tournament step rule set. |
+| `wellplayed_identity_provider` | Configures an OAuth2/OpenID Connect identity provider (IdP) for the organization. |
+| `wellplayed_organization_app` | Manages an organization OAuth2 application (client credentials). |
+| `wellplayed_organization_attached_app` | Attaches an app to the organization and places it in a permission group — the app-side counterpart of `wellplayed_iam_member`. |
+| `wellplayed_custom_field_definition` | Manages a custom field definition attached to an object type (Tournament, Account, Team, etc.). |
+| `wellplayed_custom_field_value` | Sets the value of a single custom field on an object (Tournament, Account, Team, etc.). |
 
 See the [`examples/`](./examples) directory and the generated
 [`docs/`](./docs) for full schemas and usage. Each resource supports import —
