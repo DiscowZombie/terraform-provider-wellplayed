@@ -1,3 +1,9 @@
+## 0.3.0 (Unreleased)
+
+FEATURES:
+
+* **New Data Source:** `wellplayed_identity_provider`
+
 ## 0.2.0
 
 FEATURES:

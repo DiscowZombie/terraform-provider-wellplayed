@@ -175,7 +175,9 @@ func (p *WellPlayedProvider) Resources(ctx context.Context) []func() resource.Re
 }
 
 func (p *WellPlayedProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
-	return []func() datasource.DataSource{}
+	return []func() datasource.DataSource{
+		NewIdentityProviderDataSource,
+	}
 }
 
 // stringOrEnv returns the configured value if known and non-null, otherwise
